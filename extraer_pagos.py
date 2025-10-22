@@ -24,6 +24,8 @@ class ExcelPaymentProcessorV3:
     - Parseo mejorado de fechas con meses en español
     - Columnas especiales (Pago de casos, Certificación, etc.)
     - Estado del estudiante (activo/inactivo)
+    - Notas de pago y nomenclatura exportadas
+    - Estatus normalizado (Activo / Inactivo / GRADUADO)
     - ✅ Normalización de carnés AMS → ASM SIN GUIONES
     - ✅ División de bloques preservando integridad de estudiantes
     - ✅ Soporte para montos negativos
@@ -32,7 +34,7 @@ class ExcelPaymentProcessorV3:
     TAMAÑO_BLOQUE = 4000
     
     # Índices de columnas fijas (ajustar según tu Excel real)
-    COL_NOTAS = 0
+    COL_NOTAS_PAGO = 0
     COL_CARNE = 1
     COL_NOMBRE = 2
     COL_PLAN = 3
@@ -227,6 +229,7 @@ class ExcelPaymentProcessorV3:
             'bloques_generados': 0,
             'estudiantes_activos': 0,
             'estudiantes_inactivos': 0,
+            'estudiantes_graduados': 0,
         }
         
 
@@ -293,7 +296,7 @@ class ExcelPaymentProcessorV3:
         """Limpieza robusta de texto."""
         if self._is_empty(v):
             return None
-        
+
         try:
             texto = str(v).strip()
             texto = re.sub(r'\s+', ' ', texto)
@@ -303,6 +306,32 @@ class ExcelPaymentProcessorV3:
         except Exception as e:
             self.log_estado(f"Error limpiando texto: {e}", "debug", valor=str(v)[:50])
             return None
+
+    def normalizar_estatus(self, estatus_raw: Any) -> str:
+        """
+        Normaliza el estatus según las nuevas reglas:
+        - Vacío → "Activo"
+        - Contiene 'GRADUADO' → "GRADUADO" (sin año)
+        - Mantener "Inactivo" tal cual
+        - Otros casos → "Activo"
+        """
+        estatus = self.limpiar_texto(estatus_raw)
+
+        if not estatus:
+            return "Activo"
+
+        estatus_upper = estatus.upper()
+
+        if 'GRADUADO' in estatus_upper:
+            return 'GRADUADO'
+
+        if 'INACTIV' in estatus_upper or 'BAJA' in estatus_upper:
+            return 'Inactivo'
+
+        if estatus_upper.startswith('ACTIV'):
+            return 'Activo'
+
+        return 'Activo'
 
     def normalizar_carnet(self, carnet: str) -> str:
         """
@@ -796,7 +825,17 @@ class ExcelPaymentProcessorV3:
             )
             
             columnas_info = self._construir_mapa_columnas(años_row, headers_row)
-            
+
+            notas_pago_encabezado = None
+            if self.COL_NOTAS_PAGO < len(años_row):
+                notas_pago_encabezado = self.limpiar_texto(años_row.iloc[self.COL_NOTAS_PAGO])
+            if not notas_pago_encabezado and self.COL_NOTAS_PAGO < len(headers_row):
+                notas_pago_encabezado = self.limpiar_texto(headers_row.iloc[self.COL_NOTAS_PAGO])
+            if notas_pago_encabezado:
+                normalized_label = notas_pago_encabezado.lower().replace(' ', '_')
+                if normalized_label in {'notas_de_pago', 'notas_pago'}:
+                    notas_pago_encabezado = None
+
             pagos: List[Dict[str, Any]] = []
             i = 2
             n = len(df)
@@ -849,25 +888,41 @@ class ExcelPaymentProcessorV3:
                     asesor = self.limpiar_texto(row_datos_principales.iloc[self.COL_ASESOR])
                     empresa = self.limpiar_texto(row_datos_principales.iloc[self.COL_EMPRESA])
                     telefono = self.limpiar_texto(row_datos_principales.iloc[self.COL_TELEFONO])
-                    
-                    estatus_raw = row_datos_principales.iloc[self.COL_ESTATUS] if self.COL_ESTATUS < len(row_datos_principales) else None
-                    estatus = self.limpiar_texto(estatus_raw)
-                    
-                    if not estatus or estatus.lower() in ['', 'na', 'n/a']:
-                        estatus = "Activo"
-                        self.estadisticas['estudiantes_activos'] += 1
+
+                    notas_pago_raw = (
+                        row_datos_principales.iloc[self.COL_NOTAS_PAGO]
+                        if self.COL_NOTAS_PAGO < len(row_datos_principales)
+                        else None
+                    )
+                    notas_pago = self.limpiar_texto(notas_pago_raw)
+                    if not notas_pago:
+                        notas_pago = notas_pago_encabezado
+
+                    nomenclatura_raw = (
+                        row_datos_principales.iloc[self.COL_NOMENCLATURA]
+                        if self.COL_NOMENCLATURA < len(row_datos_principales)
+                        else None
+                    )
+                    nomenclatura = self.limpiar_texto(nomenclatura_raw)
+
+                    estatus_raw = (
+                        row_datos_principales.iloc[self.COL_ESTATUS]
+                        if self.COL_ESTATUS < len(row_datos_principales)
+                        else None
+                    )
+                    estatus = self.normalizar_estatus(estatus_raw)
+
+                    if estatus == "Inactivo":
+                        self.estadisticas['estudiantes_inactivos'] += 1
+                    elif estatus == "GRADUADO":
+                        self.estadisticas['estudiantes_graduados'] += 1
                     else:
-                        if 'inactiv' in estatus.lower() or 'baja' in estatus.lower():
-                            estatus = "Inactivo"
-                            self.estadisticas['estudiantes_inactivos'] += 1
-                        else:
-                            estatus = "Activo"
-                            self.estadisticas['estudiantes_activos'] += 1
-                    
+                        self.estadisticas['estudiantes_activos'] += 1
+
                     mail = self.limpiar_texto(row_datos_principales.iloc[self.COL_MAIL])
                     mes_inicio = self.limpiar_texto(row_datos_principales.iloc[self.COL_MES_INICIO])
                     valor_total = self.limpiar_monto(row_datos_principales.iloc[self.COL_VALOR_TOTAL])
-                    
+
                     self.log_estado(
                         f"👤 Procesando",
                         carnet=carnet,
@@ -875,9 +930,9 @@ class ExcelPaymentProcessorV3:
                         plan=plan_estudios,
                         estatus=estatus
                     )
-                    
+
                     pagos_estudiante: List[Dict[str, Any]] = []
-                    
+
                     pagos_estudiante.extend(
                         self._procesar_columnas_especiales(
                             row_datos_principales,
@@ -887,10 +942,12 @@ class ExcelPaymentProcessorV3:
                             carnet,
                             nombre,
                             plan_estudios,
-                            estatus
+                            estatus,
+                            notas_pago,
+                            nomenclatura
                         )
                     )
-                    
+
                     pagos_estudiante.extend(
                         self._procesar_columnas_meses(
                             row_datos_principales,
@@ -902,6 +959,8 @@ class ExcelPaymentProcessorV3:
                             nombre,
                             plan_estudios,
                             estatus,
+                            notas_pago,
+                            nomenclatura,
                             mes_inicio
                         )
                     )
@@ -979,7 +1038,9 @@ class ExcelPaymentProcessorV3:
         carnet,
         nombre,
         plan_estudios,
-        estatus
+        estatus,
+        notas_pago,
+        nomenclatura
     ) -> List[Dict[str, Any]]:
         """Procesa las columnas especiales antes de los meses."""
         pagos = []
@@ -1034,9 +1095,11 @@ class ExcelPaymentProcessorV3:
                     
                     if boleta and monto:
                         pago = {
+                            'Notas de pago': notas_pago,
                             'carnet': carnet,
                             'nombre_estudiante': nombre,
                             'plan_estudios': plan_estudios,
+                            'Nomenclatura': nomenclatura,
                             'estatus': estatus,
                             'numero_boleta': boleta,
                             'monto': monto,
@@ -1072,6 +1135,8 @@ class ExcelPaymentProcessorV3:
         nombre,
         plan_estudios,
         estatus,
+        notas_pago,
+        nomenclatura,
         mes_inicio
     ) -> List[Dict[str, Any]]:
         """Procesa las columnas de meses."""
@@ -1128,9 +1193,11 @@ class ExcelPaymentProcessorV3:
                     
                     if boleta and monto:
                         pago = {
+                            'Notas de pago': notas_pago,
                             'carnet': carnet,
                             'nombre_estudiante': nombre,
                             'plan_estudios': plan_estudios,
+                            'Nomenclatura': nomenclatura,
                             'estatus': estatus,
                             'numero_boleta': boleta,
                             'monto': monto,
@@ -1188,6 +1255,8 @@ class ExcelPaymentProcessorV3:
                 'carnet',
                 'nombre_estudiante',
                 'plan_estudios',
+                'Notas de pago',
+                'Nomenclatura',
                 'estatus',
                 'numero_boleta',
                 'monto',
@@ -1261,12 +1330,13 @@ class ExcelPaymentProcessorV3:
                     ruta_archivo.unlink()
                 
                 with pd.ExcelWriter(ruta_archivo, engine='openpyxl') as writer:
-                    df_bloque.to_excel(writer, index=False, sheet_name='Pagos')
-                    
+                    df_bloque_to_write = df_bloque.rename(columns={'estatus': 'Estatus (normalizado)'})
+                    df_bloque_to_write.to_excel(writer, index=False, sheet_name='Pagos')
+
                     worksheet = writer.sheets['Pagos']
-                    for idx, col in enumerate(df_bloque.columns, 1):
+                    for idx, col in enumerate(df_bloque_to_write.columns, 1):
                         max_length = max(
-                            df_bloque[col].astype(str).str.len().max(),
+                            df_bloque_to_write[col].astype(str).str.len().max(),
                             len(col)
                         )
                         col_letter = chr(64 + idx) if idx <= 26 else 'A' + chr(64 + idx - 26)
@@ -1329,6 +1399,7 @@ class ExcelPaymentProcessorV3:
    • Procesados: {self.estadisticas['estudiantes_procesados']}
    • Activos: {self.estadisticas['estudiantes_activos']}
    • Inactivos: {self.estadisticas['estudiantes_inactivos']}
+   • Graduados: {self.estadisticas['estudiantes_graduados']}
    • Sin pagos: {self.estadisticas['estudiantes_sin_pagos']}
    • Carnés únicos: {len(self.estadisticas['carnets_procesados'])}
    • Carnés duplicados: {len([k for k, v in self.estadisticas['carnets_duplicados'].items() if v > 0])}
