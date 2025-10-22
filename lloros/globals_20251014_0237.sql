@@ -1,0 +1,41 @@
+--
+-- PostgreSQL database cluster dump
+--
+
+\restrict oN6bckBquQrRj8o6rvJR88Wg3HVxyqh7tKh1fYt4a9a7xU8rSbXafTdcqKuqaaW
+
+SET default_transaction_read_only = off;
+
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+
+--
+-- Roles
+--
+
+CREATE ROLE admin_dbuser;
+ALTER ROLE admin_dbuser WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'SCRAM-SHA-256$4096:7dQN7CuvQgn7DiZSQKnUuQ==$3oyTENCXi8601TYihOkB6slHD8pADGjjvV0qUAuGQo0=:dWODhvyInGgSKGRZmYGewZ0Lh03rLSenrhJ+5SdWO2M=';
+CREATE ROLE asm_prod_user;
+ALTER ROLE asm_prod_user WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'SCRAM-SHA-256$4096:tO1mGMyie7awhGWt00Y3nw==$+qMAIesfBHnkGW5wba0RmJXFRuZhPIqejQZNtw+vJ/0=:7c7gcukG3ntL0ui6NJWiMN+CIFXbDscFbVOLmgxxuv0=';
+CREATE ROLE asm_user;
+ALTER ROLE asm_user WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'SCRAM-SHA-256$4096:THTe8igXxG6/MOj9sIqW5w==$A4SEVJAMEsUhsoxR8pT3Fwg+VXcCoaQk8AOLXlHmxh0=:5kQuOgq8NPgcxrTU6A+5Nt3QSVWR9PaPkCzTN5axlLU=';
+CREATE ROLE postgres;
+ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;
+
+--
+-- User Configurations
+--
+
+
+
+
+
+
+
+
+\unrestrict oN6bckBquQrRj8o6rvJR88Wg3HVxyqh7tKh1fYt4a9a7xU8rSbXafTdcqKuqaaW
+
+--
+-- PostgreSQL database cluster dump complete
+--
+
