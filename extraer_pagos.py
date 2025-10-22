@@ -228,7 +228,8 @@ class ExcelPaymentProcessorV3:
             'estudiantes_activos': 0,
             'estudiantes_inactivos': 0,
         }
-        
+    
+    
 
     # ========== LOGGING ==========
     def setup_logging(self, level):
