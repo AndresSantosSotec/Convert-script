@@ -4,11 +4,14 @@ Sistema de procesamiento de archivos de pagos con interfaz gráfica de usuario (
 
 ## 📋 Descripción
 
-Aplicación que permite procesar archivos Excel y CSV con información de pagos de estudiantes, normalizando y transformando los datos para su análisis y exportación.
+Aplicación que permite procesar archivos Excel y CSV con información de pagos de estudiantes, normalizando y transformando los datos para su análisis y exportación. **Versión 3.2** incluye mejoras significativas en la responsividad de la interfaz, adaptándose automáticamente a cualquier tamaño de pantalla, desde dispositivos móviles hasta monitores de escritorio de alta resolución.
 
 ## ✨ Características
 
 - ✅ Interfaz gráfica intuitiva (no requiere conocimientos técnicos)
+- ✅ **Diseño responsivo adaptado a todos los tamaños de pantalla**
+- ✅ **Optimización automática para móviles, tablets y escritorio**
+- ✅ **Ajuste dinámico de tamaños de fuente y botones**
 - ✅ Soporte para archivos Excel (.xlsx) y CSV (.csv)
 - ✅ Procesamiento automático con validaciones
 - ✅ Normalización de carnés (AMS → ASM, eliminación de guiones)
@@ -59,6 +62,35 @@ python interfaz_extraerpagos.py
 ```bash
 python extraer_pagos.py
 ```
+
+## 📱 Diseño Responsivo
+
+La versión 3.2 introduce un sistema completo de diseño responsivo que adapta automáticamente la interfaz a cualquier tamaño de pantalla:
+
+### Tipos de Pantalla Soportados
+
+- **📱 Móvil** (< 768px): Interfaz optimizada para pantallas pequeñas con elementos compactos
+- **📲 Tablet** (768px - 1024px): Diseño intermedio para tabletas y pantallas medianas
+- **💻 Escritorio** (> 1024px): Interfaz completa con espaciado generoso
+
+### Características Responsivas
+
+- **Ajuste automático del tamaño de ventana**: La aplicación detecta el tamaño de tu pantalla y ajusta sus dimensiones iniciales
+- **Escalado de fuentes**: Los textos se ajustan automáticamente para mantener la legibilidad
+- **Botones adaptativos**: Los botones cambian de tamaño según el espacio disponible
+- **Espaciado dinámico**: Los márgenes y padding se ajustan para optimizar el uso del espacio
+- **Área de logs escalable**: El área de visualización de logs crece según el tamaño de la pantalla
+- **Ventana redimensionable**: Puedes ajustar manualmente el tamaño de la ventana con límites inteligentes
+
+### Compatibilidad Multiplataforma
+
+La aplicación funciona en:
+- ✅ Windows (7, 8, 10, 11)
+- ✅ macOS (10.13+)
+- ✅ Linux (Ubuntu, Debian, Fedora, etc.)
+- ⚠️ iOS/iPadOS (requiere Python y tkinter configurado)
+
+**Nota para iOS**: Aunque la interfaz está optimizada para funcionar en pantallas pequeñas, iOS tiene limitaciones con aplicaciones de escritorio. Para usar en iOS/iPadOS, se recomienda ejecutar mediante un entorno Python compatible o usar soluciones de escritorio remoto.
 
 ## 📖 Uso de la Interfaz Gráfica
 
@@ -252,14 +284,24 @@ Al finalizar el procesamiento, se genera un reporte con:
 ## 👤 Autor
 
 **AndresSantosSotec**
-- Versión: 3.1
-- Fecha: 2025-01-17
+- Versión: 3.2
+- Fecha: 2025-10-23
+- Mejoras: Diseño responsivo y adaptativo para todas las pantallas
 
 ## 📄 Licencia
 
 Este proyecto es de código abierto y está disponible bajo licencia MIT.
 
 ## 🔄 Changelog
+
+### v3.2 (2025-10-23)
+- ✅ **Diseño responsivo completo para todos los tamaños de pantalla**
+- ✅ **Detección automática de tipo de dispositivo (móvil/tablet/escritorio)**
+- ✅ **Ajuste dinámico de ventana según resolución de pantalla**
+- ✅ **Escalado adaptativo de fuentes, botones y espaciados**
+- ✅ **Optimización para pantallas pequeñas y grandes**
+- ✅ **Soporte mejorado para múltiples resoluciones**
+- ✅ **Interfaz táctil amigable para dispositivos móviles**
 
 ### v3.1 (2025-01-17)
 - ✅ Interfaz gráfica completa
